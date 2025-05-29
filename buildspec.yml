@@ -1,0 +1,78 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - pip install requests
+  pre_build:
+    commands:
+      - echo Logging in to Cloud One Conformity...
+  build:
+    commands:
+      - echo Starting Template Scanner...
+      - |
+        python << 'EOF'
+        import requests
+        import json
+        import os
+        
+        # Cloud One Conformity API configuration
+        API_KEY = os.environ['CONFORMITY_API_KEY']
+        REGION = os.environ['CONFORMITY_REGION']
+        
+        headers = {
+            'Authorization': f'ApiKey {API_KEY}',
+            'Content-Type': 'application/vnd.api+json'
+        }
+        
+        # Read CloudFormation template
+        with open('template.yaml', 'r') as f:
+            template_content = f.read()
+        
+        # Prepare scan request
+        scan_data = {
+            'data': {
+                'type': 'template-scanner',
+                'attributes': {
+                    'type': 'cloudformation-template',
+                    'contents': template_content
+                }
+            }
+        }
+        
+        # Submit scan
+        response = requests.post(
+            f'https://{REGION}-api.cloudconformity.com/v1/template-scanner/scan',
+            headers=headers,
+            json=scan_data
+        )
+        
+        if response.status_code == 200:
+            results = response.json()
+            with open('scan-results.json', 'w') as f:
+                json.dump(results, f, indent=2)
+            
+            # Check for failures
+            failures = [item for item in results.get('data', []) if item.get('attributes', {}).get('status') == 'FAILURE']
+            
+            if failures:
+                print(f"Template scan found {len(failures)} issues:")
+                for failure in failures:
+                    attrs = failure.get('attributes', {})
+                    print(f"- {attrs.get('rule-title', 'Unknown')}: {attrs.get('message', 'No message')}")
+                exit(1)
+            else:
+                print("Template scan passed successfully!")
+        else:
+            print(f"Scan failed with status {response.status_code}")
+            print(response.text)
+            exit(1)
+        EOF
+  post_build:
+    commands:
+      - echo Template scanning completed
+artifacts:
+  files:
+    - template.yaml
+    - scan-results.json

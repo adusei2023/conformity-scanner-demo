@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Free Tier CloudFormation template for Conformity scanning'
+
+Resources:
+  # Free Tier S3 Bucket (stays within 5GB limit)
+  SampleS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sample-bucket-${AWS::AccountId}-${AWS::Region}'
+      # Intentionally missing encryption for demonstration
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteAfter7Days
+            Status: Enabled
+            ExpirationInDays: 7  # Auto-delete to stay in free tier
+
+  # Free Tier EC2 Instance (t2.micro only)
+  SampleEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}'
+      InstanceType: t2.micro  # FREE TIER ONLY
+      # Missing security group configuration (intentional for demo)
+      Tags:
+        - Key: Environment
+          Value: Demo
+        - Key: AutoShutdown
+          Value: "true"  # Tag for potential auto-shutdown
+
+  # CloudWatch Log Group (5GB free per month)
+  SampleLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/demo/${AWS::StackName}'
+      RetentionInDays: 7  # Short retention to stay in free tier
