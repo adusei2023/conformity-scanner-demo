@@ -19,7 +19,10 @@ def load_template(template_path: str) -> str:
     except FileNotFoundError:
         print(f"Error: Template file '{template_path}' not found")
         sys.exit(1)
-    except Exception as e:
+    except PermissionError:
+        print(f"Error: Permission denied reading template file '{template_path}'")
+        sys.exit(1)
+    except IOError as e:
         print(f"Error reading template file: {e}")
         sys.exit(1)
 

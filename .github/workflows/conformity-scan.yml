@@ -38,8 +38,10 @@ jobs:
       - name: Run Conformity Scanner
         env:
           CONFORMITY_API_KEY: ${{ secrets.CONFORMITY_API_KEY }}
-          CONFORMITY_REGION: ${{ secrets.CONFORMITY_REGION || 'us-west-2' }}
+          CONFORMITY_REGION: ${{ secrets.CONFORMITY_REGION }}
+          DEFAULT_REGION: us-west-2
         run: |
+          export CONFORMITY_REGION="${CONFORMITY_REGION:-$DEFAULT_REGION}"
           python scan.py template.yaml
       
       - name: Upload scan results

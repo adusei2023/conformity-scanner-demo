@@ -20,7 +20,7 @@ echo "✓ Python 3 found: $(python3 --version)"
 if ! python3 -c "import requests" 2>/dev/null; then
     echo ""
     echo "📦 Installing Python dependencies..."
-    pip install requests
+    python3 -m pip install requests
     echo "✓ Dependencies installed"
 else
     echo "✓ Python dependencies already installed"
